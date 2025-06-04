@@ -18,6 +18,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
+ # Git identity configured via build args
+ARG GIT_USER_NAME="docker"
+ARG GIT_USER_EMAIL="docker@example.com"
+RUN git config --global user.name "$GIT_USER_NAME" \
+ && git config --global user.email "$GIT_USER_EMAIL"
+
 # Composer & Symfony CLI
 RUN curl -sSk https://getcomposer.org/installer | php -- --disable-tls && mv composer.phar /usr/local/bin/composer
 RUN curl -sS https://get.symfony.com/cli/installer | bash && mv /root/.symfony*/bin/symfony /usr/local/bin/symfony
