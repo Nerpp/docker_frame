@@ -29,34 +29,39 @@ docker compose up -d
 ```
 
 ### Créer un nouveau projet Symfony (si nécessaire)
+Avant de lancer les conteneurs, modifie le fichier `.env` pour définir
+la variable `PROJECT_DIR` avec le nom souhaité.
+
 ```bash
-# Exemple depuis PowerShell
-$env:PROJECT_DIR = "home_controller"
-# Lancer les conteneurs
+# Construction et lancement
 docker compose up -d
-# Créer ensuite ton projet depuis /var/www
-docker exec -w /var/www $env:PROJECT_DIR symfony new --webapp mon_projet
-
-
+# Création du projet Symfony dans le conteneur
+PROJECT_DIR=$(grep '^PROJECT_DIR=' .env | cut -d '=' -f2)
+docker exec -w /var/www "$PROJECT_DIR" symfony new --webapp "$PROJECT_DIR"
 ```
 
 ### Démarrer un nouveau projet
-Change simplement la variable `PROJECT_DIR` pour isoler chaque
-environnement. Chaque valeur de `PROJECT_DIR` possède son propre
-conteneur et son dossier `./<nom>` sur l'hôte :
+Change simplement la variable `PROJECT_DIR` dans `.env` pour isoler chaque
+environnement. Chaque valeur possède son propre conteneur et son dossier
+`./<nom>` sur l'hôte :
 
 ```bash
-$env:PROJECT_DIR = "mon_second_projet"
+# Exemple avec un nouveau projet
+sed -i "s/^PROJECT_DIR=.*/PROJECT_DIR=mon_second_projet/" .env
 docker compose up -d
-docker exec -w /var/www $env:PROJECT_DIR symfony new --webapp mon_projet
+PROJECT_DIR=$(grep '^PROJECT_DIR=' .env | cut -d '=' -f2)
+docker exec -w /var/www "$PROJECT_DIR" symfony new --webapp "$PROJECT_DIR"
 ```
 
 Tu peux ainsi démultiplier les environnements sans rien réinstaller.
+Chaque instance possède automatiquement son volume MySQL propre
+(`mysql_data` sera préfixé par le nom du projet), ce qui évite les conflits
+de base de données entre projets.
 
 ### Régler les permissions (optionnel)
 Pour éviter les problèmes de permissions :
 ```bash
-sudo chown -R $USER:$USER project
+sudo chown -R $USER:$USER "$PROJECT_DIR"
 ```
 
 ## 2. Structure du projet
@@ -84,7 +89,7 @@ docker compose down
 - **Accéder au conteneur**
 ```bash
 # voir la création de symfony
-docker exec -it $env:PROJECT_DIR bash
+docker exec -it $PROJECT_DIR bash
 ```
 - **Voir les logs**
 ```bash
@@ -107,68 +112,68 @@ docker compose logs
 ## 5. Gestion des dépendances avec Composer
 - **Installer les dépendances**
 ```bash
-docker exec -w /var/www/project $env:PROJECT_DIR composer install
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR composer install
 ```
 - **Ajouter une nouvelle dépendance (exemple twig)**
 ```bash
-docker exec -w /var/www/project $env:PROJECT_DIR composer require twig
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR composer require twig
 ```
 
 ### Monter en version Symfony
 Pour passer à une version plus récente de Symfony :
 ```bash
-docker exec -w /var/www/project $env:PROJECT_DIR composer update symfony/*
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR composer update symfony/*
 ```
 
 ## 6. Débogage
 - **Activer la barre de débogage Symfony**
 ```bash
-docker exec -w /var/www/project $env:PROJECT_DIR composer require symfony/web-profiler-bundle --dev
-docker exec -w /var/www/project $env:PROJECT_DIR bin/console cache:clear
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR composer require symfony/web-profiler-bundle --dev
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR bin/console cache:clear
 ```
 
 - **Voir les logs Apache**
 ```bash
-docker exec -it   cat /var/log/apache2/error.log
+docker exec -it $PROJECT_DIR cat /var/log/apache2/error.log
 ```
 
 - **Activer le mode debug Symfony**
 ```bash
-docker exec -w /var/www/project $env:PROJECT_DIR bin/console debug:config framework
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR bin/console debug:config framework
 ```
 
 ## 7. Problèmes fréquents
 ### Erreur Doctrine (base de données)
 Vérifier extensions PHP (`pdo_mysql` activée) :
 ```bash
-docker exec -it $env:PROJECT_DIR docker-php-ext-install pdo_mysql
+docker exec -it $PROJECT_DIR docker-php-ext-install pdo_mysql
 ```
 Créer la base de données :
 ```bash
-docker exec -w /var/www/project $env:PROJECT_DIR bin/console doctrine:database:create
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR bin/console doctrine:database:create
 ```
 
 - **Erreur 404 (Page Not Found)** : Vérifie l'installation Symfony et la configuration Apache (`vhosts.conf`).
 
 - **Problèmes de cache Symfony** : Vider le cache
 ```bash
-docker exec -w /var/www/project $env:PROJECT_DIR bin/console cache:clear
+docker exec -w /var/www/$PROJECT_DIR $PROJECT_DIR bin/console cache:clear
 ```
 
 - **Problèmes de permissions** :
 ```bash
-sudo chown -R $USER:$USER project
+sudo chown -R $USER:$USER "$PROJECT_DIR"
 ```
 
 Remarque : Utilisation du shell interactif Docker
 Lorsque tu accèdes au conteneur Docker via la commande :
 
-docker exec -it $env:PROJECT_DIR bash
-par défaut, tu es situé dans le répertoire /var/www. À cet endroit, le fichier bin/console n'existe pas car ton projet Symfony se trouve dans le sous-dossier /var/www/project.
+docker exec -it $PROJECT_DIR bash
+par défaut, tu es situé dans le répertoire /var/www. À cet endroit, le fichier bin/console n'existe pas car ton projet Symfony se trouve dans le sous-dossier /var/www/$PROJECT_DIR.
 
 Tu dois donc te déplacer vers le dossier du projet Symfony pour exécuter les commandes Symfony :
 
-cd project
+cd "$PROJECT_DIR"
 php bin/console make:controller chatController
 Cette étape est essentielle pour que Symfony reconnaisse tes commandes et les exécute correctement.
 
