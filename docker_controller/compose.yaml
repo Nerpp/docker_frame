@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     container_name: db_${PROJECT_DIR}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data_${PROJECT_DIR}:/var/lib/mysql
     ports:
       - "${DB_PORT}:3306"
     environment:
@@ -46,4 +46,5 @@ services:
     restart: always
 
 volumes:
+  mysql_data_${PROJECT_DIR}:
   mysql_data:
