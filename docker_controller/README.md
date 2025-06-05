@@ -54,8 +54,9 @@ docker exec -w /var/www "$PROJECT" symfony new --webapp "$PROJECT"
 ```
 
 Tu peux ainsi démultiplier les environnements sans rien réinstaller.
-Chaque instance dispose de son propre volume MySQL (`mysql_data_<nom>`),
-ce qui évite les conflits de base de données entre projets.
+Chaque instance possède automatiquement son volume MySQL propre
+(`mysql_data` sera préfixé par le nom du projet), ce qui évite les conflits
+de base de données entre projets.
 
 ### Régler les permissions (optionnel)
 Pour éviter les problèmes de permissions :
