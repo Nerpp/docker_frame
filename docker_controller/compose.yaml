@@ -27,7 +27,7 @@ services:
     ports:
       - "${MAILDEV_PORT}:80"
 
- www:
+  www:
     platform: linux/amd64     # change en linux/arm64 si Mac M1/Raspberry
     build:
       context: .                # racine du dépôt
@@ -42,9 +42,6 @@ services:
       - ./php/vhosts:/etc/apache2/sites-enabled
       - ./${PROJECT_DIR}:/var/www
     restart: always
-
-volumes:
-  mysql_data:
 
 volumes:
   mysql_data:
