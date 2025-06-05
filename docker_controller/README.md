@@ -30,14 +30,28 @@ docker compose up -d
 
 ### Créer un nouveau projet Symfony (si nécessaire)
 ```bash
-##docker exec -w /var/www (container name) symfony new --webapp app
-#dans le powershell
+# Exemple depuis PowerShell
 $env:PROJECT_DIR = "home_controller"
-#ensuite on peut l'utiliser pour créer symfony en utilisant le nom du container unique
-docker exec -w /var/www $env:PROJECT_DIR symfony new --webapp app
+# Lancer les conteneurs
+docker compose up -d
+# Créer ensuite ton projet depuis /var/www
+docker exec -w /var/www $env:PROJECT_DIR symfony new --webapp mon_projet
 
 
 ```
+
+### Démarrer un nouveau projet
+Change simplement la variable `PROJECT_DIR` pour isoler chaque
+environnement. Chaque valeur de `PROJECT_DIR` possède son propre
+conteneur et son dossier `./<nom>` sur l'hôte :
+
+```bash
+$env:PROJECT_DIR = "mon_second_projet"
+docker compose up -d
+docker exec -w /var/www $env:PROJECT_DIR symfony new --webapp mon_projet
+```
+
+Tu peux ainsi démultiplier les environnements sans rien réinstaller.
 
 ### Régler les permissions (optionnel)
 Pour éviter les problèmes de permissions :
@@ -52,7 +66,7 @@ test_docker_symfony/
 ├── php/
 │   ├── Dockerfile
 │   └── vhosts/vhosts.conf
-└── project/
+└── <nom>/
     ├── public/ (fichiers web accessibles)
     ├── src/ (code source PHP)
     └── config, bin, templates, var, vendor...
